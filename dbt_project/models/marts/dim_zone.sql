@@ -1,0 +1,1 @@
+select zone_id, zone_name, borough from {{ ref('stg_zones') }}

@@ -7,6 +7,7 @@ from sqlalchemy import create_engine, text
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger(__name__)
 
 url = (
     f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
@@ -25,7 +26,7 @@ def load_table(df: pd.DataFrame, name: str) -> None:
     # if_exists="replace" makes the load idempotent: re-running gives the same result
     df.to_sql(name, engine, schema="raw", if_exists="replace",
               index=False, chunksize=50_000)
-    logging.info("Loaded %d rows into raw.%s", len(df), name)
+    logger.info("Loaded %d rows into raw.%s", len(df), name)
 
 
 if __name__ == "__main__":

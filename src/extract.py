@@ -5,6 +5,7 @@ import pandas as pd
 import requests
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger(__name__)
 
 RAW_DIR = Path("data/raw")
 RAW_DIR.mkdir(parents=True, exist_ok=True)
@@ -25,26 +26,25 @@ WEATHER_URL = (
 def download(url: str, dest: Path) -> None:
     """Download a file. Skips if it already exists (idempotent)."""
     if dest.exists():
-        logging.info("Skipping %s (already exists)", dest.name)
+        logger.info("Skipping %s (already exists)", dest.name)
         return
-    logging.info("Downloading %s", url)
+    logger.info("Downloading %s", url)
     with requests.get(url, stream=True, timeout=120) as r:
         r.raise_for_status()
         with open(dest, "wb") as f:
-            for chunk in r.iter_content(chunk_size=1024 * 1024):
-                f.write(chunk)
+            f.writelines(r.iter_content(chunk_size=1024 * 1024))
 
 
 def fetch_weather(dest: Path) -> None:
     if dest.exists():
-        logging.info("Skipping %s (already exists)", dest.name)
+        logger.info("Skipping %s (already exists)", dest.name)
         return
     r = requests.get(WEATHER_URL, timeout=60)
     r.raise_for_status()
     hourly = r.json()["hourly"]
     df = pd.DataFrame(hourly).rename(columns={"time": "hour_ts"})
     df.to_csv(dest, index=False)
-    logging.info("Saved %d weather rows", len(df))
+    logger.info("Saved %d weather rows", len(df))
 
 
 if __name__ == "__main__":
@@ -52,4 +52,4 @@ if __name__ == "__main__":
     download(ZONES_URL, RAW_DIR / "zones.csv")
     fetch_weather(RAW_DIR / "weather.csv")
     taxi = pd.read_parquet(RAW_DIR / "taxi.parquet")
-    logging.info("Taxi rows: %d, columns: %d", *taxi.shape)
+    logger.info("Taxi rows: %d, columns: %d", *taxi.shape)
